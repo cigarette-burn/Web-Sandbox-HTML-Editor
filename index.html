@@ -1,15 +1,229 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Website</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Редактор HTML</title>
+    <style>
+        /* Бро, ну я сам всё написал, зачем сюда смотришь???? */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            height: 100vh;
+            height: 100dvh;
+            background-color: #ECE9E2;
+            color: #22211E;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        /* Переключатель вкладок для телефона (на ПК скрыт) */
+        .mobile-tabs {
+            display: none;
+            background-color: #E2DFD7;
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 10px 0;
+            font-size: 15px;
+            font-weight: 500;
+            color: #5E5B54;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .tab-btn.active {
+            background-color: #FAF9F6;
+            color: #1F1E1C;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Рабочая область */
+        .workspace {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            min-height: 0;
+        }
+
+        .pane {
+            background-color: #FAF9F6;
+            border: 1px solid #D6D2C7;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .pane-header {
+            padding: 10px 16px;
+            background-color: #F4F2EC;
+            border-bottom: 1px solid #E2DFD7;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4A4842;
+            user-select: none;
+        }
+
+        #code-input {
+            width: 100%;
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 16px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #1F1E1C;
+            background-color: #FAF9F6;
+            resize: none;
+            tab-size: 4;
+        }
+
+        #code-input::placeholder {
+            color: #9A968C;
+        }
+
+        .output-pane {
+            background-color: #FFFFFF;
+        }
+
+        #output {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: #FFFFFF;
+        }
+
+        /* Адаптация под планшеты и телефоны */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .mobile-tabs {
+                display: flex;
+            }
+
+            .workspace {
+                display: block;
+            }
+
+            .pane {
+                height: 100%;
+                display: none;
+            }
+
+            .pane.active-pane {
+                display: flex;
+            }
+
+            .pane-header {
+                display: none;
+            }
+
+            #code-input {
+                font-size: 16px;
+                padding: 14px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <p style="color: yellow; font-size: 15px;">Какой-то текст</p>
-    <p style="color: blue; font-size: 30px;">Еще какой-то цвет</p>
+
+    <div class="mobile-tabs">
+        <button class="tab-btn active" data-target="editor-pane">Код</button>
+        <button class="tab-btn" data-target="preview-pane">Результат</button>
+    </div>
+
+    <div class="workspace">
+
+        <!-- ОБЛАСТЬ ВВОДА -->
+        <section class="pane active-pane" id="editor-pane">
+            <div class="pane-header">index.html</div>
+            <textarea id="code-input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
+                placeholder="Начните писать код..."></textarea>
+        </section>
+
+        <!-- ОБЛАСТЬ ВЫВОДА -->
+        <section class="pane output-pane" id="preview-pane">
+            <div class="pane-header">Результат</div>
+            <iframe id="output"></iframe>
+        </section>
+
+    </div>
+
+    <script>
+        const codeInput = document.getElementById('code-input');
+        const outputIframe = document.getElementById('output');
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const panes = document.querySelectorAll('.pane');
+
+        function updatePreview() {
+            const userCode = codeInput.value;
+            const iframeDoc = outputIframe.contentDocument || outputIframe.contentWindow.document;
+
+            iframeDoc.open();
+            iframeDoc.write(userCode);
+            iframeDoc.close();
+        }
+
+        codeInput.addEventListener('input', updatePreview);
+
+        // Переключение вкладок на телефоне
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabButtons.forEach(b => b.classList.remove('active'));
+                panes.forEach(p => p.classList.remove('active-pane'));
+
+                btn.classList.add('active');
+                const targetId = btn.getAttribute('data-target');
+                document.getElementById(targetId).classList.add('active-pane');
+
+                if (targetId === 'preview-pane') {
+                    updatePreview();
+                }
+            });
+        });
+
+        // Поддержка отступов по клавише Tab
+        codeInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = codeInput.selectionStart;
+                const end = codeInput.selectionEnd;
+                codeInput.value = codeInput.value.substring(0, start) + '    ' + codeInput.value.substring(end);
+                codeInput.selectionStart = codeInput.selectionEnd = start + 4;
+                updatePreview();
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const demoCode = `<div style="text-align: center; margin-top: 50px; font-family: sans-serif; color: #22211E;">
+    <h2 style="font-size: 24px; margin-bottom: 8px;">Проект запустился</h2>
+    <p style="color: #666; font-size: 16px; margin-bottom: 6px;">Редактор готов к работе</p>
+    <p style="color: #B84A27; font-size: 16px;">Какой-то текст
+</div>`;
+            codeInput.value = demoCode;
+            updatePreview();
+        });
+    </script>
 </body>
 
 </html>
